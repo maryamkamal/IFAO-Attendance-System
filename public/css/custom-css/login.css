@@ -1,0 +1,121 @@
+#login-img{
+    width: 75%;
+}
+.navbar{
+    padding: 15px 5px;
+}
+.logo{
+    color: #685284;
+    font-weight: 500;
+}
+.img-side-div{
+    float: left;
+    /*text-align: center;*/
+}
+.black-font{color: #535353;}
+.gray-font{color: #71747a;}
+.blue-font{color: #3c8dfb;}
+.welcome-desc{
+    margin-bottom: 10px;
+}
+.welcome-desc p{
+    width: 80%;
+    /*margin-left: auto;*/
+    margin-right: auto;
+}
+.welcome-p{
+    font-size: 20px;
+    font-weight: 600;
+    margin: 25px 0;
+}
+.login-now-link{
+    background-color: #15b29b;
+    color: white;
+    transition: .4s ease-in-out;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+a:hover{text-decoration: none;}
+.login-now-link:hover{
+    color: white;
+    background-color: #0da58f;
+}
+
+/***** form dic ****/
+.login-form-div{
+    margin: 20vh 0 20px 30px;
+    float: left;
+    /*text-align: center;*/
+}
+.form-header h4{
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+.form-header p{
+    width: 80%;
+    /*margin-left: auto;*/
+    margin-right: auto;
+    margin-bottom: 40px;
+}
+
+.form-input{
+    border: 2px solid #d9d9d9;
+    margin-bottom: 25px;
+}
+.input-div { 
+    position: relative; 
+    margin: 0 auto ;
+    text-align: center;
+  }
+  .input-div input { 
+    text-indent: 30px;
+     font-family:  FontAwesome, sans-serif;
+     font-size: 16px;
+  }
+  .input-div .input-icon { 
+    position: absolute;
+    top: 27%;
+    left: 5%;
+    font-size: 15px;
+    color: #d9d9d9;
+    transition: .4s ease-in-out;
+  }
+  .form-input:focus ~ .input-div .input-icon{
+      color: #495057;
+  }
+  .form-control:focus{
+    border-color: #peru !important;
+  }
+
+  .form-control:focus{
+    border-color: #peru !important;
+  }
+
+  .login-btn{
+    background-color:peru;
+    border-style: none;
+    color: white;
+    padding: 13px 50px;
+    width: 100%;
+    font-size: 18px;
+    border-radius: 5px;
+    transition: .4s ease-in-out;
+  }
+  
+  @media screen and (max-width: 992px){
+      .form-header p{width: 100%;}
+      .form-input{font-size: 14px;}
+  }
+  @media screen and (max-width: 768px){
+    .img-side-div, .login-form-div {
+        float: none;
+        text-align: center;
+    }
+    .welcome-desc p {
+        width: 100%;
+    }
+    .login-form-div {
+        margin: 15vh 0 50px 0;;
+    }
+  }

@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Imports;
+
+use Exception;
+use App\Attendance;
+use App\Employee;
+use App\Absence;
+use App\vacation;
+use App\WorkScheduleProfile;
+use App\OverTimeProfile;
+use App\EmployeeLeave;
+use App\AttendanceNet;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Illuminate\Support\Facades\Validator;
+use DB;
+class AttendanceImport implements ToCollection, WithHeadingRow
+{
+    /**
+    * @param array $row
+    *
+    * @return \Illuminate\Database\Eloquent\Model|null
+    */
+     public function collection(Collection $rows)
+    {
+		
+        date_default_timezone_set("Africa/Cairo");
+        Validator::make($rows->toArray(), [
+             '*.employee_code' => 'required',
+         ])->validate();
+
+		foreach ($rows as $row){	
+		//dd(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row["to"])->format('H:i:s'));
+		$employee = Employee::where('code',$row["employee_code"])->first();
+		
+		$employee_id =$employee->id;
+		if((bool)strtotime($row["day"]) == false){
+		$day =\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row["day"])->format('Y-m-d');
+		}
+		else{
+			$day =$row["day"];
+		}
+		if((bool)strtotime($row["from"]) == false){
+		$from =\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row["from"])->format('H:i:s');
+		}
+		else{
+			$from =$row["from"];
+		}
+		if((bool)strtotime($row["from"]) == false){
+		$to =\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row["to"])->format('H:i:s');
+		}
+		else{
+			$to =$row["to"];
+		}
+		if(isset($row["id"]) && $row["id"] !=null){
+			 $attendance = Attendance::find($row["id"]); 
+        
+		}
+		else{
+		 $attendance = new Attendance;
+		
+		}
+		$work_schedule_id = $row["work_schedule_id"];
+		$overtime_profile_id =$row["overtime_profile_id"] ;
+		Attendance::store( $attendance,$employee_id,$day,$from,$to,$work_schedule_id,$overtime_profile_id);
+		}
+	}
+}

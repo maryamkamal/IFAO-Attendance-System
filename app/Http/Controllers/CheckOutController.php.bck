@@ -1,0 +1,231 @@
+<?php
+
+namespace App\Http\Controllers;
+use App\Employee;
+use App\Absence;
+use App\Attendance;
+use App\vacation;
+use App\WorkScheduleProfile;
+use App\OverTimeProfile;
+use App\EmployeeLeave;
+use App\AttendanceNet;
+use App\EmployeePermission;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
+class CheckOutController extends Controller
+{
+
+	public function search(){
+
+		return view('check-out.search');
+
+	}
+
+	public function get_employee(Request $request){
+		if (!$request->code) {
+        $html =  '';
+    } else {
+        $html = '';
+
+        $employee = Employee::where('code',$request->code)->first();
+        if ($employee) {
+            $html =  '<div class="card">
+              <h5 class="card-header table-header">Employee data</h5>
+              <div class="card-body">
+                  <div class="table-responsive">
+				   <form action="'.url('check-out/store/'.$employee->id).'" method="POST">
+				   '.csrf_field().'
+                      <table class="table table-striped table-bordered first data-table" id="users-table">
+                          <thead>
+
+                              <tr>
+                                  <th scope="col" class="img-title text-center">Code</th>
+                                  <th scope="col" class="product-name-title text-center">Image</th>
+                                  <th scope="col" class="category-title text-center">Name</th>
+								  <th scope="col" class="options-title text-center"></th>
+                              </tr>
+                          </thead>
+                          <tbody>
+						   <tr>
+                                  <td scope="col" class="img-title text-center">'.$employee->code.'</td>
+                                  <td scope="col" class="product-name-title text-center"><img src="'.asset('img/employees/'.$employee->image).'" class="circle-img"> </td>
+                                  <td scope="col" class="category-title text-center">'.$employee->full_name_en.'</td>
+								 <td scope="col" class="img-title text-center">
+								 <span class="edit-btn">
+								 <button type="submit"  class="btn btn-primary export-btn"> Check out </button>
+                                  </span>
+								  </td>
+                              </tr>
+                          </tbody>
+                      </table>
+					   </form>
+                  </div>
+              </div>
+
+          </div>';
+
+        }
+    }
+
+    return response()->json(['html' => $html]);
+	}
+
+	//save employee check out
+	public function store($id , Request $request)
+	{
+		$employee = Employee::find($id);
+        date_default_timezone_set("Africa/Cairo");
+		/***** check if employee assign net calculation or create new one***/
+		$attendance_net = AttendanceNet::where('employee_id',$id)
+				                          ->where('day',date('Y-m-d'))
+										  ->first();
+		if($attendance_net == null){
+			$attendance_net = new AttendanceNet;
+			$attendance_net['employee_id'] = $id ;
+			$attendance_net['day'] = date('Y-m-d') ;
+		}								 
+		 /***********************************************************/
+		/**** check if employee checked in ***/
+		$checked_in = Attendance::where('employee_id',$id)->where('day', date("Y-m-d"))->where('to',null)->orderBy('id', 'desc')->first();
+		if($checked_in){
+		  $checked_in['to']= date("H:i:s");
+		  $checked_in['work_schedule_id']= $employee['work_schedule_id'];
+		  $checked_in['overtime_profile_id']=  $employee['overtime_profile_id'];
+           $checked_in->save();
+		   $today_name = date('l', strtotime(date('Y-m-d')));
+		//check employee working schedule
+		
+		$employee_schedule =WorkScheduleProfile::where('id',$checked_in->work_schedule_id)->first();
+		$employee_overtime_profile = OverTimeProfile::where('id',$checked_in->overtime_profile_id)->first();
+		$employee_schedule_days = unserialize($employee_schedule->work_days);
+		 
+		    /*** get all checkd in/out of the day *****/								  
+		   $employee_check_in_of_the_day =Attendance::where('employee_id',$id)->where('day', date("Y-m-d"))->get();
+		   $total_net = 0 ;
+		  foreach( $employee_check_in_of_the_day as $checked_net){
+			  
+		   if(floor((strtotime($checked_net->to)-strtotime($checked_net->from))/60) <0){
+					 
+				 $net =((12*60)-(floor((strtotime($checked_net->from)-strtotime('12:00:00'))/60)))+(floor((strtotime($checked_net->to)-strtotime('00:00:00'))/60)); 
+				 }
+				 else{
+		        $net = floor((strtotime($checked_net->to)-strtotime($checked_net->from))/60);
+				 }
+		        $total_net = $net + $total_net;	 
+        	}
+			//set attendance net of all checked in/out of the day = total net
+				/********/ $attendance_net['worked_duration'] =  round(($total_net/60), 2); /******/
+				
+				
+		// if employee overtime > employee cumulative delay
+		       if($employee_overtime_profile != null) {
+		    	//calculate overtime hours in vacations and holidays
+		    	if($employee->delay_balance > 0){
+				$attendance_net['delay_deduction']=1;
+				 $overtime_hours = ($total_net / 60) - $employee->delay_balance;
+				 if($overtime_hours > 0){
+					  $employee->delay_balance =0;
+				 }
+				  //if employee still has delay 
+				 else{
+					   $employee->delay_balance = - $overtime_hours ; 
+				 }
+			}
+			else{
+				 $overtime_hours = ($total_net / 60);
+			}
+				//if there is vacation or work day is off save only employee_id,day,from to attendance
+		     if(!in_array($today_name,$employee_schedule_days) && $overtime_hours > 0){
+               $attendance_net['overtime_net_percentage'] =round(($overtime_hours) *(1+($employee_overtime_profile->weekend_days_ratio / 100)),2);
+			   if($employee_overtime_profile->is_paid == null){
+			    $employee->solde =  $employee->solde + round(($overtime_hours) *(1+($employee_overtime_profile->weekend_days_ratio / 100)),2);
+			   }
+			 }
+			
+	       if(session("is_vacation")== 1 && $overtime_hours > 0){
+		   $attendance_net['overtime_net_percentage'] =round(($overtime_hours ) * (1+($employee_overtime_profile->holidays_ratio / 100)),2);
+		   if($employee_overtime_profile->is_paid == null){
+            $employee->solde =  $employee->solde +round(($overtime_hours ) * (1+($employee_overtime_profile->holidays_ratio / 100)),2);
+		   }
+	       }
+		   
+		   if(in_array($today_name,$employee_schedule_days)){
+			   if($employee->delay_balance > 0){
+				$attendance_net['delay_deduction']=1;
+				  $overtime = ($total_net / 60) - $employee_schedule->work_duration;
+                 $final_overtime_hours =  $overtime - $employee->delay_balance ;
+				 if($final_overtime_hours > 0){
+					  $employee->delay_balance = 0 ;
+				 }
+				  //if employee still has delay after delay deduction
+				 else{
+					   $employee->delay_balance = - $final_overtime_hours ; 
+				 }
+			}
+			else{
+				 $final_overtime_hours = ($total_net / 60) - $employee_schedule->work_duration;
+				 
+			}
+	        // calculate employee work duration of the day - schedule profile work duration 
+            
+          //overtime case >10 minuts
+		    
+		   //if over time hours < 2
+		    
+                if(0.16 < $final_overtime_hours && $final_overtime_hours < 2){
+					  $attendance_net['delay'] = 0 ;
+                $attendance_net['overtime_net_percentage'] = round($final_overtime_hours *(1+( $employee_overtime_profile->first_two_hours_ratio / 100)),2);
+				if($employee_overtime_profile->is_paid == 0){
+				 $employee->solde =  $employee->solde + round($final_overtime_hours *(1+( $employee_overtime_profile->first_two_hours_ratio / 100)),2);
+                 }
+				}
+			//more than 2 hours
+			   if($final_overtime_hours > 2){
+				     $attendance_net['delay'] = 0 ;
+				//percentage = first 2 hours percentage + latest hours percentage
+			 	$attendance_net['overtime_net_percentage']= round((2*(1+($employee_overtime_profile->first_two_hours_ratio / 100))) +((($final_overtime_hours -2))*(1+($employee_overtime_profile->next_hours_ratio/100))),2);
+			   if($employee_overtime_profile->is_paid == 0){
+			    $employee->solde =  $employee->solde +round((2*(1+($employee_overtime_profile->first_two_hours_ratio / 100))) +((($final_overtime_hours -2))*(1+($employee_overtime_profile->next_hours_ratio/100))),2);
+			   }
+			   }
+			   elseif($final_overtime_hours ==0){
+				    $attendance_net['delay'] = 0 ;
+			   }
+		   
+		//if work duration differance > 10 minutes 
+		//delay case
+			elseif(($final_overtime_hours*60) < 0){ 
+			//if employee has permission of delay 
+			$EmployeePermission = EmployeePermission::where('employee_id',$employee->id)
+			->where('day',date("Y-m-d"))
+			->where('status','approved')
+			->join('permissions', 'permissions.id', '=', 'employee_permissions.permission_id')
+			->select('employee_permissions.from','permissions.is_paid','employee_permissions.status')
+            ->first();
+			   if($EmployeePermission!=null &&$EmployeePermission->is_paid ==1){
+				    $permission_duration =floor((strtotime($EmployeePermission->to)-strtotime($EmployeePermission->from))/60);
+					if( ($permission_duration/60) < -$final_overtime_hours){
+						$attendance_net['delay'] = -$final_overtime_hours -($permission_duration/60);
+					}
+			    }
+			  else{
+				  $attendance_net['delay'] =round(-$final_overtime_hours,2)  ;
+				   $employee->solde =  $employee->solde +$final_overtime_hours ;
+				   $employee->delay_balance = $employee->delay_balance - $final_overtime_hours ;
+				  $attendance_net['overtime_net_percentage']= null;
+	            }
+		   }
+		}
+		}
+		$attendance_net->save();
+		 $employee->save();
+		return back()->with('success', 'Employee check out  added successfully');
+    
+		}
+		//if employee already checked out
+		else{
+            return back()->with('error', 'Employee already checked out');
+        }
+	}
+}

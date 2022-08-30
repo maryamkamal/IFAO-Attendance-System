@@ -1,0 +1,129 @@
+body{background-color: white;}
+.navbar-toggler-icon{
+    color: #685284;
+    font-size: 23px;
+    margin-top: 13px;
+}
+.navbar-right-top .nav-item{
+    transition: .4s ease-in-out;
+}
+.show .navbar-right-top .nav-item:hover, .navbar-right-top .nav-item:focus{
+    background-color: #ffe0fe; 
+    cursor: pointer;
+}
+.page-content{
+    padding: 40px 0;
+}
+.page-title{
+    width: auto;
+    display: inline-block;
+}
+.page-title{
+    color: #ff4780;
+    background: #fdddef;
+    padding: 9px 10px;
+    border-radius: 5px;
+    font-size: 18px;
+}
+.page-title i, .page-title p{display: inline-block;}
+
+/** home content **/
+.home-img-div img{
+    width: 100%;
+    position: relative;
+    top: 10vh;
+}
+.home-p{
+    margin: 40px 0;
+}
+
+.greatings-div{
+    font-size: 25px;
+}
+.hi-div{
+    color:#535353; 
+    display: inline-block;
+}
+.greetings{
+    /* color:#a572ff; */
+    color: #685284;
+    display: inline-block;
+}
+.continued-p{
+    font-size: 17px;
+    color: #71747a;
+    padding: 10px 0;
+}
+.quick-links-div{
+    margin-top: 20px;
+}
+.card{
+   /* margin-right: 15px; */
+    text-align:center;
+}
+.box-title-div{
+    font-size: 17px;
+    color: #685284;
+    font-weight: bold;
+}
+.box-title-div i{
+    color: #15b29b;
+    margin-right: 5px;
+}
+.navbar-brand{color: #685284;}
+.box-btn{
+    background-color: #685284;
+    color: white;
+    font-weight: bold;
+    padding: 5px 30px;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: .4s ease-in-out;
+}
+.box-btn:hover, .box-btn:focus{
+    color: white;
+    background-color: #45305f;
+    text-decoration: none;
+    width: 100%;
+}
+.boxs-row{
+    margin-bottom: 10px;
+}
+
+
+#more-less-btn{
+    background-color: #15b29b;
+    color: white;
+    transition: .4s ease-in-out;
+    padding: 10px 20px;
+    border-radius: 5px;
+    border-style: none;
+    transition: .4s ease-in-out;
+}
+#more-less-btn:hover, #more-less-btn:focus{
+    color: white;
+    cursor: pointer;
+    background-color: #0da58f;
+}
+.nav-user-info{
+    background-color: #685284;
+}
+/**** media ****/
+@media screen and (max-width: 992px){
+    .home-img-div img{top: 0;}
+}
+.dropdown-toggle{
+	background-color:peru;
+}
+.page-item.active .page-link {
+    z-index: 1;
+    color: #fff;
+    background-color: #376861;
+    border-color: #376861;
+}
+.header {
+	background-image:url("img/login-img.png");
+	height:70px;
+	width:110%;
+	margin:-10px;
+}
